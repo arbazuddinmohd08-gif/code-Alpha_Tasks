@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wavify — Music Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d12;
+    --surface: #16161f;
+    --surface2: #1e1e2a;
+    --surface3: #252534;
+    --accent: #7c6bff;
+    --accent2: #b16bff;
+    --text: #f0eeff;
+    --text2: #9896b0;
+    --text3: #5c5a72;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 1fr 88px;
+    height: 100vh;
+    min-height: 600px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    grid-row: 1 / 2;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+
+  .nav {
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(124,107,255,0.15); color: var(--accent); font-weight: 500; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-section {
+    padding: 12px 20px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .playlist-list {
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .pl-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pl-nav-item:hover { background: var(--surface2); color: var(--text); }
+  .pl-nav-item.active { color: var(--accent); }
+
+  .pl-dot {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  /* ── Main ── */
+  .main {
+    grid-column: 2;
+    grid-row: 1 / 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .page-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 40px;
+    padding: 7px 14px;
+    width: 220px;
+    transition: border-color 0.15s;
+  }
+  .search-box:focus-within { border-color: var(--accent); }
+  .search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+  }
+  .search-box input::placeholder { color: var(--text3); }
+  .search-icon { color: var(--text3); font-size: 15px; }
+
+  /* ── Featured Banner ── */
+  .banner {
+    margin: 20px 28px 0;
+    border-radius: var(--radius);
+    padding: 28px;
+    background: linear-gradient(135deg, #1a1630 0%, #1c1224 50%, #12182a 100%);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .banner::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(124,107,255,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .banner-art {
+    width: 80px; height: 80px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    background: rgba(255,255,255,0.07);
+    flex-shrink: 0;
+    border: 1px solid var(--border2);
+  }
+
+  .banner-info { flex: 1; }
+  .banner-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .banner-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .banner-sub { font-size: 13px; color: var(--text2); }
+
+  .banner-play {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    color: white;
+    transition: transform 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .banner-play:hover { transform: scale(1.08); background: var(--accent2); }
+
+  /* ── Track List ── */
+  .tracks-section {
+    padding: 20px 28px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .section-heading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .tracks-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface3) transparent;
+  }
+
+  .track-header {
+    display: grid;
+    grid-template-columns: 36px 1fr 100px 60px 44px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .track-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 100px 60px 44px;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.12s;
+    gap: 0;
+  }
+  .track-row:hover { background: var(--surface2); }
+  .track-row.playing { background: rgba(124,107,255,0.1); }
+
+  .track-num {
+    font-size: 13px;
+    color: var(--text3);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .track-row.playing .track-num { color: var(--accent); }
+
+  .track-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+  .track-thumb {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: var(--surface3);
+    flex-shrink: 0;
+  }
+
+  .track-text { min-width: 0; }
+  .track-title { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-artist { font-size: 12px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-row.playing .track-title { color: var(--accent); }
+
+  .track-album { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+  .track-dur { font-size: 12px; color: var(--text3); text-align: center; font-variant-numeric: tabular-nums; }
+
+  .track-like {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .track-like:hover { color: #ff6b8a; }
+  .track-like.liked { color: #ff6b8a; }
+
+  /* ── EQ Animation ── */
+  .eq {
+    display: flex; align-items: flex-end; gap: 2px; height: 16px; width: 20px;
+    opacity: 0;
+    margin: 0 auto;
+  }
+  .eq.active { opacity: 1; }
+  .eq span {
+    width: 3px;
+    background: var(--accent);
+    border-radius: 1px;
+    animation: eq 0.7s ease-in-out infinite alternate;
+  }
+  .eq span:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .eq span:nth-child(2) { height: 14px; animation-delay: 0.12s; }
+  .eq span:nth-child(3) { height: 9px; animation-delay: 0.06s; }
+  @keyframes eq { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+
+  /* ── Now Playing Bar ── */
+  .now-bar {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    background: var(--surface);
+    border-top: 1px solid var(--border2);
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .now-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .now-art { width: 48px; height: 48px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: var(--surface3); flex-shrink: 0; }
+  .now-text { min-width: 0; }
+  .now-title { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now-artist { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .now-like { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; padding: 4px 8px; transition: color 0.15s; }
+  .now-like:hover { color: #ff6b8a; }
+  .now-like.liked { color: #ff6b8a; }
+
+  /* center */
+  .now-center { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+  .ctrl-btns { display: flex; align-items: center; gap: 4px; }
+  .ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover { color: var(--text); background: var(--surface2); }
+  .ctrl-btn.accent { color: var(--accent); }
+  .ctrl-btn.sm { font-size: 15px; }
+
+  .play-btn-main {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: #0d0d12;
+    transition: transform 0.15s;
+  }
+  .play-btn-main:hover { transform: scale(1.06); }
+
+  .progress-wrap { display: flex; align-items: center; gap: 10px; width: 100%; }
+  .time-label { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; min-width: 32px; }
+  .time-label.end { text-align: right; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--surface3);
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.3); }
+  input[type=range]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* right */
+  .now-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .vol-icon { font-size: 17px; color: var(--text2); }
+  .vol-slider { width: 90px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+  /* ── Genre badge ── */
+  .genre-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr 88px; }
+    .sidebar { grid-row: 1; grid-column: 1; flex-direction: row; overflow-x: auto; }
+    .main { grid-column: 1; grid-row: 2; }
+    .now-bar { grid-column: 1; grid-row: 3; grid-template-columns: 1fr; }
+    .track-header, .track-row { grid-template-columns: 36px 1fr 60px 44px; }
+    .track-album { display: none; }
+    .now-right { display: none; }
+    .now-info { min-width: 0; max-width: 160px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🎵</div>
+      Wavify
+    </div>
+    <nav class="nav">
+      <div class="nav-item active"><span class="nav-icon">🏠</span> Home</div>
+      <div class="nav-item"><span class="nav-icon">🔍</span> Search</div>
+      <div class="nav-item"><span class="nav-icon">📚</span> Library</div>
+    </nav>
+    <div class="sidebar-section">Playlists</div>
+    <div class="playlist-list">
+      <div class="pl-nav-item active">
+        <div class="pl-dot" style="background:rgba(124,107,255,0.2)">💜</div>
+        <span>Synthwave Nights</span>
+      </div>
+      <div class="pl-nav-item">
+        <div class="pl-dot" style="background:rgba(0,200,150,0.15)">🌊</div>
+        <span>Chill Vibes</span>
+      </div>
+      <div class="pl-nav-item">
+        <div class="pl-dot" style="background:rgba(255,160,50,0.15)">🔥</div>
+        <span>Energy Boost</span>
+      </div>
+      <div class="pl-nav-item">
+        <div class="pl-dot" style="background:rgba(255,100,140,0.15)">🌸</div>
+        <span>Late Night</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">Synthwave Nights</div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search tracks…" id="searchInput" oninput="filterTracks()">
+      </div>
+    </div>
+
+    <div class="banner" id="banner">
+      <div class="banner-art" id="bannerArt">🌃</div>
+      <div class="banner-info">
+        <div class="banner-label">Now Featured</div>
+        <div class="banner-title" id="bannerTitle">Midnight Drive</div>
+        <div class="banner-sub" id="bannerSub">The Neon Collective · Synth Dreams</div>
+      </div>
+      <button class="banner-play" id="bannerPlayBtn" onclick="togglePlay()" title="Play / Pause">▶</button>
+    </div>
+
+    <div class="tracks-section">
+      <div class="section-heading">All Tracks</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:var(--text3)">Autoplay</span>
+        <label style="position:relative;display:inline-block;width:34px;height:19px;">
+          <input type="checkbox" id="autoplayToggle" checked style="opacity:0;width:0;height:0;">
+          <span id="autoplaySlider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--surface3);border-radius:19px;transition:.2s;"></span>
+          <span id="autoplayThumb" style="position:absolute;left:3px;bottom:3px;width:13px;height:13px;background:white;border-radius:50%;transition:.2s;"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="track-header">
+      <div style="text-align:center">#</div>
+      <div>Title</div>
+      <div>Album</div>
+      <div style="text-align:center">Time</div>
+      <div></div>
+    </div>
+
+    <div class="tracks-list" id="tracksList"></div>
+  </main>
+
+  <!-- ── Now Playing Bar ── -->
+  <footer class="now-bar">
+    <div class="now-info">
+      <div class="now-art" id="nowArt">🌃</div>
+      <div class="now-text">
+        <div class="now-title" id="nowTitle">Midnight Drive</div>
+        <div class="now-artist" id="nowArtist">The Neon Collective</div>
+      </div>
+      <button class="now-like" id="nowLikeBtn" onclick="toggleCurrentLike()" title="Like">♡</button>
+    </div>
+
+    <div class="now-center">
+      <div class="ctrl-btns">
+        <button class="ctrl-btn sm" id="btnShuffle" onclick="toggleShuffle()" title="Shuffle">🔀</button>
+        <button class="ctrl-btn" onclick="prevTrack()" title="Previous">⏮</button>
+        <button class="play-btn-main" id="mainPlayBtn" onclick="togglePlay()" title="Play / Pause">▶</button>
+        <button class="ctrl-btn" onclick="nextTrack()" title="Next">⏭</button>
+        <button class="ctrl-btn sm" id="btnRepeat" onclick="toggleRepeat()" title="Repeat">🔁</button>
+      </div>
+      <div class="progress-wrap">
+        <span class="time-label" id="currentTime">0:00</span>
+        <input type="range" id="progressBar" min="0" max="100" value="0" step="1" oninput="seek(this.value)" style="background:linear-gradient(to right,#7c6bff 0%,var(--surface3) 0%)">
+        <span class="time-label end" id="totalTime">3:42</span>
+      </div>
+    </div>
+
+    <div class="now-right">
+      <span class="vol-icon">🔊</span>
+      <input type="range" class="vol-slider" id="volBar" min="0" max="100" value="75" step="1" oninput="setVol(this.value)" style="background:linear-gradient(to right,rgba(255,255,255,0.5) 75%,var(--surface3) 75%)">
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const songs = [
+  { title:"Midnight Drive",    artist:"The Neon Collective", album:"Synth Dreams",    genre:"Synthwave",       dur:222, emoji:"🌃", color:"#2a1a4a" },
+  { title:"Solar Wind",        artist:"Orbital Echo",        album:"Cosmos",          genre:"Ambient",         dur:198, emoji:"☀️", color:"#1a2a3a" },
+  { title:"City Lights",       artist:"Urban Pulse",         album:"Concrete Jungle", genre:"Lo-fi",           dur:175, emoji:"🏙️", color:"#1a2520" },
+  { title:"Glass Ocean",       artist:"The Neon Collective", album:"Synth Dreams",    genre:"Chillwave",       dur:264, emoji:"🌊", color:"#0a1e2e" },
+  { title:"Ember Path",        artist:"Skyline Theory",      album:"Horizons",        genre:"Indie Electronic",dur:213, emoji:"🔥", color:"#2e1a0a" },
+  { title:"Starfield",         artist:"Orbital Echo",        album:"Cosmos",          genre:"Ambient",         dur:241, emoji:"✨", color:"#1a1a2e" },
+  { title:"Neon Rain",         artist:"The Neon Collective", album:"Synth Dreams",    genre:"Synthwave",       dur:189, emoji:"🌧️", color:"#1e1a30" },
+  { title:"Desert Highway",    artist:"Skyline Theory",      album:"Horizons",        genre:"Indie Electronic",dur:232, emoji:"🌵", color:"#2e2010" },
+  { title:"Frozen Lake",       artist:"Orbital Echo",        album:"Cosmos",          genre:"Ambient",         dur:207, emoji:"❄️", color:"#0e1e2e" },
+  { title:"Purple Haze Night", artist:"Urban Pulse",         album:"Concrete Jungle", genre:"Lo-fi",           dur:195, emoji:"💜", color:"#1e1030" },
+];
+
+const genreColors = {
+  "Synthwave":"rgba(124,107,255,0.25)","Ambient":"rgba(0,180,140,0.2)","Lo-fi":"rgba(255,170,80,0.2)","Chillwave":"rgba(80,170,255,0.2)","Indie Electronic":"rgba(255,110,100,0.2)"
+};
+const genreText = {
+  "Synthwave":"#b8b0ff","Ambient":"#60e0b8","Lo-fi":"#ffc068","Chillwave":"#80d0ff","Indie Electronic":"#ff9080"
+};
+
+let current = 0, isPlaying = false, shuffle = false, repeat = false;
+let elapsed = 0, timer = null;
+let liked = new Set();
+let shuffleOrder = [...Array(songs.length).keys()];
+let query = '';
+
+const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+
+function shuffleArr(a) {
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function renderTracks() {
+  const list = document.getElementById('tracksList');
+  const q = query.toLowerCase();
+  list.innerHTML = songs.map((s, i) => {
+    if (q && !s.title.toLowerCase().includes(q) && !s.artist.toLowerCase().includes(q)) return '';
+    const gc = genreColors[s.genre] || 'rgba(255,255,255,0.1)';
+    const gt = genreText[s.genre] || '#ccc';
+    const eq = i === current ? `<div class="eq${isPlaying?' active':''}" id="eq${i}"><span></span><span></span><span></span></div>` : `<span>${i+1}</span>`;
+    return `
+    <div class="track-row${i===current?' playing':''}" id="row${i}" ondblclick="selectTrack(${i})">
+      <div class="track-num">${eq}</div>
+      <div class="track-info">
+        <div class="track-thumb">${s.emoji}</div>
+        <div class="track-text">
+          <div class="track-title">${s.title}<span class="genre-pill" style="background:${gc};color:${gt}">${s.genre}</span></div>
+          <div class="track-artist">${s.artist}</div>
+        </div>
+      </div>
+      <div class="track-album">${s.album}</div>
+      <div class="track-dur">${fmt(s.dur)}</div>
+      <div><button class="track-like${liked.has(i)?' liked':''}" onclick="toggleLike(event,${i})" title="Like">${liked.has(i)?'♥':'♡'}</button></div>
+    </div>`;
+  }).join('');
+}
+
+function updateBanner() {
+  const s = songs[current];
+  document.getElementById('bannerArt').textContent = s.emoji;
+  document.getElementById('bannerTitle').textContent = s.title;
+  document.getElementById('bannerSub').textContent = `${s.artist} · ${s.album}`;
+  document.getElementById('nowArt').textContent = s.emoji;
+  document.getElementById('nowTitle').textContent = s.title;
+  document.getElementById('nowArtist').textContent = s.artist;
+  document.getElementById('nowLikeBtn').textContent = liked.has(current) ? '♥' : '♡';
+  document.getElementById('nowLikeBtn').classList.toggle('liked', liked.has(current));
+  document.getElementById('totalTime').textContent = fmt(s.dur);
+  const pb = document.getElementById('progressBar');
+  pb.max = s.dur;
+}
+
+function selectTrack(i) {
+  current = i; elapsed = 0;
+  updateBanner();
+  renderTracks();
+  play();
+}
+
+function play() {
+  isPlaying = true;
+  document.getElementById('mainPlayBtn').textContent = '⏸';
+  document.getElementById('bannerPlayBtn').textContent = '⏸';
+  renderEq(true);
+  clearInterval(timer);
+  timer = setInterval(() => {
+    elapsed = Math.min(elapsed + 1, songs[current].dur);
+    const pb = document.getElementById('progressBar');
+    pb.value = elapsed;
+    updateProgressStyle(pb, elapsed, songs[current].dur);
+    document.getElementById('currentTime').textContent = fmt(elapsed);
+    if (elapsed >= songs[current].dur) {
+      clearInterval(timer);
+      if (repeat) { elapsed = 0; play(); }
+      else if (document.getElementById('autoplayToggle').checked) nextTrack();
+      else pause();
+    }
+  }, 1000);
+}
+
+function pause() {
+  isPlaying = false;
+  document.getElementById('mainPlayBtn').textContent = '▶';
+  document.getElementById('bannerPlayBtn').textContent = '▶';
+  clearInterval(timer);
+  renderEq(false);
+}
+
+function togglePlay() { isPlaying ? pause() : play(); }
+
+function nextTrack() {
+  if (shuffle) {
+    const idx = shuffleOrder.indexOf(current);
+    current = shuffleOrder[(idx+1)%songs.length];
+  } else {
+    current = (current+1) % songs.length;
+  }
+  elapsed = 0;
+  updateBanner();
+  renderTracks();
+  if (isPlaying || document.getElementById('autoplayToggle').checked) { isPlaying = true; play(); }
+}
+
+function prevTrack() {
+  if (elapsed > 3) { elapsed = 0; if (isPlaying) play(); return; }
+  if (shuffle) {
+    const idx = shuffleOrder.indexOf(current);
+    current = shuffleOrder[(idx - 1 + songs.length) % songs.length];
+  } else {
+    current = (current - 1 + songs.length) % songs.length;
+  }
+  elapsed = 0;
+  updateBanner();
+  renderTracks();
+  if (isPlaying) play();
+}
+
+function seek(val) {
+  elapsed = parseInt(val);
+  document.getElementById('currentTime').textContent = fmt(elapsed);
+  updateProgressStyle(document.getElementById('progressBar'), elapsed, songs[current].dur);
+  if (isPlaying) { clearInterval(timer); play(); }
+}
+
+function setVol(val) {
+  const v = document.getElementById('volBar');
+  v.style.background = `linear-gradient(to right,rgba(255,255,255,0.5) ${val}%,var(--surface3) ${val}%)`;
+}
+
+function updateProgressStyle(el, val, max) {
+  const pct = (val / max) * 100;
+  el.style.background = `linear-gradient(to right,#7c6bff ${pct}%,var(--surface3) ${pct}%)`;
+}
+
+function toggleShuffle() {
+  shuffle = !shuffle;
+  document.getElementById('btnShuffle').style.opacity = shuffle ? '1' : '0.45';
+  if (shuffle) shuffleArr(shuffleOrder);
+}
+
+function toggleRepeat() {
+  repeat = !repeat;
+  document.getElementById('btnRepeat').style.opacity = repeat ? '1' : '0.45';
+}
+
+function toggleLike(e, i) {
+  e.stopPropagation();
+  liked.has(i) ? liked.delete(i) : liked.add(i);
+  renderTracks();
+  updateBanner();
+}
+
+function toggleCurrentLike() {
+  liked.has(current) ? liked.delete(current) : liked.add(current);
+  renderTracks();
+  updateBanner();
+}
+
+function filterTracks() {
+  query = document.getElementById('searchInput').value;
+  renderTracks();
+}
+
+function renderEq(active) {
+  const el = document.getElementById('eq' + current);
+  if (el) el.classList.toggle('active', active);
+}
+
+// Autoplay toggle visuals
+document.getElementById('autoplayToggle').addEventListener('change', function() {
+  const sl = document.getElementById('autoplaySlider');
+  const th = document.getElementById('autoplayThumb');
+  if (this.checked) {
+    sl.style.background = '#7c6bff';
+    th.style.transform = 'translateX(15px)';
+  } else {
+    sl.style.background = 'var(--surface3)';
+    th.style.transform = 'translateX(0)';
+  }
+});
+// Init toggle state
+document.getElementById('autoplaySlider').style.background = '#7c6bff';
+document.getElementById('autoplayThumb').style.transform = 'translateX(15px)';
+
+// Shuffle/Repeat initial opacity
+document.getElementById('btnShuffle').style.opacity = '0.45';
+document.getElementById('btnRepeat').style.opacity = '0.45';
+
+updateBanner();
+renderTracks();
+</script>
+</body>
+</html>

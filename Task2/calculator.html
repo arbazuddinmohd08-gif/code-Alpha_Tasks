@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator | by Arbaz</title>
+  <style>
+    /* ===== Reset & Base ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* ===== Calculator Wrapper ===== */
+    .calc-wrapper {
+      background: #767b87;
+      border-radius: 20px;
+      padding: 24px;
+      width: 320px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 1px solid #05080c;
+    }
+
+    /* ===== Title ===== */
+    .calc-title {
+      text-align: center;
+      font-size: 12px;
+      color: #25040a;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    /* ===== Display ===== */
+    .display {
+      background: #11040c;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .display .expression {
+      font-size: 14px;
+      color: #864d4d;
+      min-height: 18px;
+      word-break: break-all;
+      text-align: right;
+    }
+
+    .display .result {
+      font-size: 36px;
+      font-weight: 700;
+      color: #535050;
+      letter-spacing: 1px;
+      word-break: break-all;
+      transition: font-size 0.1s;
+    }
+
+    /* shrink big numbers */
+    .display .result.small {
+      font-size: 24px;
+    }
+
+    /* ===== Button Grid ===== */
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    /* ===== Buttons ===== */
+    button {
+      height: 60px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    button:active {
+      transform: scale(0.93);
+    }
+
+    /* Number buttons */
+    .btn-num {
+      background: #1a2a4a;
+      color: #e0e0e0;
+    }
+
+    .btn-num:hover {
+      background: #22345c;
+    }
+
+    /* Operator buttons */
+    .btn-op {
+      background: #0f3460;
+      color: #e94560;
+      font-size: 20px;
+    }
+
+    .btn-op:hover {
+      background: #17457d;
+    }
+
+    /* Equals button */
+    .btn-eq {
+      background: #e94560;
+      color: #fff;
+      font-size: 22px;
+    }
+
+    .btn-eq:hover {
+      background: #ff5577;
+    }
+
+    /* Clear / AC */
+    .btn-clear {
+      background: #e94560;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .btn-clear:hover {
+      background: #ff5577;
+    }
+
+    /* Backspace */
+    .btn-back {
+      background: #2a1a2e;
+      color: #e94560;
+      font-size: 16px;
+    }
+
+    .btn-back:hover {
+      background: #3d2040;
+    }
+
+    /* Span 2 cols for zero */
+    .span2 {
+      grid-column: span 2;
+    }
+
+    /* ===== Keyboard hint ===== */
+    .kb-hint {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 11px;
+      color: #444;
+      letter-spacing: 1px;
+    }
+
+    /* ===== Error ===== */
+    .error {
+      color: #e94560 !important;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calc-wrapper">
+  <div class="calc-title">Calculator</div>
+
+  <!-- Display -->
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-grid">
+    <!-- Row 1 -->
+    <button class="btn-clear" onclick="clearAll()">AC</button>
+    <button class="btn-back" onclick="backspace()">⌫</button>
+    <button class="btn-op" onclick="inputOperator('%')">%</button>
+    <button class="btn-op" onclick="inputOperator('/')">÷</button>
+
+    <!-- Row 2 -->
+    <button class="btn-num" onclick="inputNum('7')">7</button>
+    <button class="btn-num" onclick="inputNum('8')">8</button>
+    <button class="btn-num" onclick="inputNum('9')">9</button>
+    <button class="btn-op" onclick="inputOperator('*')">×</button>
+
+    <!-- Row 3 -->
+    <button class="btn-num" onclick="inputNum('4')">4</button>
+    <button class="btn-num" onclick="inputNum('5')">5</button>
+    <button class="btn-num" onclick="inputNum('6')">6</button>
+    <button class="btn-op" onclick="inputOperator('-')">−</button>
+
+    <!-- Row 4 -->
+    <button class="btn-num" onclick="inputNum('1')">1</button>
+    <button class="btn-num" onclick="inputNum('2')">2</button>
+    <button class="btn-num" onclick="inputNum('3')">3</button>
+    <button class="btn-op" onclick="inputOperator('+')">+</button>
+
+    <!-- Row 5 -->
+    <button class="btn-num span2" onclick="inputNum('0')">0</button>
+    <button class="btn-num" onclick="inputDecimal()">.</button>
+    <button class="btn-eq" onclick="calculate()">=</button>
+  </div>
+
+  <div class="kb-hint">⌨ keyboard supported</div>
+</div>
+
+<script>
+  // ===== State =====
+  let currentInput = '';
+  let expression   = '';
+  let justCalc     = false;  // did we just press = ?
+
+  // ===== Display refs =====
+  const resultEl    = document.getElementById('result');
+  const expressionEl = document.getElementById('expression');
+
+  // ===== Update display =====
+  function updateDisplay(val) {
+    resultEl.textContent = val;
+    // auto-shrink if number is long
+    resultEl.classList.toggle('small', val.toString().length > 10);
+  }
+
+  // ===== Input a digit =====
+  function inputNum(num) {
+    if (justCalc) {
+      // start fresh after = was pressed
+      currentInput = '';
+      expression   = '';
+      justCalc     = false;
+    }
+    if (currentInput.length >= 15) return;  // limit digit length
+    currentInput += num;
+    expressionEl.textContent = expression + currentInput;
+    updateDisplay(currentInput);
+  }
+
+  // ===== Decimal point =====
+  function inputDecimal() {
+    if (justCalc) { currentInput = '0'; expression = ''; justCalc = false; }
+    if (currentInput.includes('.')) return;  // only one dot
+    if (currentInput === '') currentInput = '0';
+    currentInput += '.';
+    expressionEl.textContent = expression + currentInput;
+    updateDisplay(currentInput);
+  }
+
+  // ===== Operator =====
+  function inputOperator(op) {
+    justCalc = false;
+    if (currentInput === '' && expression === '') return; // nothing typed yet
+
+    // if currentInput exists, push it to expression
+    if (currentInput !== '') {
+      expression += currentInput;
+      currentInput = '';
+    } else {
+      // replace last operator if typed twice
+      expression = expression.slice(0, -1);
+    }
+
+    expression += op;
+    expressionEl.textContent = expression;
+    updateDisplay('0');
+  }
+
+  // ===== Calculate =====
+  function calculate() {
+    if (expression === '' && currentInput === '') return;
+    if (expression === '') return;
+
+    let fullExpr = expression + (currentInput !== '' ? currentInput : '0');
+    expressionEl.textContent = fullExpr + ' =';
+
+    try {
+      // eval is ok for a simple student calculator :)
+      let answer = Function('"use strict"; return (' + fullExpr + ')')();
+
+      // handle division by zero
+      if (!isFinite(answer)) {
+        updateDisplay('Error');
+        resultEl.classList.add('error');
+        expression   = '';
+        currentInput = '';
+        return;
+      }
+
+      // round to avoid floating point weirdness
+      answer = parseFloat(answer.toFixed(10));
+      updateDisplay(answer);
+      resultEl.classList.remove('error');
+
+      expression   = '';
+      currentInput = answer.toString();
+      justCalc     = true;
+
+    } catch (e) {
+      updateDisplay('Error');
+      resultEl.classList.add('error');
+      expression   = '';
+      currentInput = '';
+    }
+  }
+
+  // ===== Clear All =====
+  function clearAll() {
+    currentInput = '';
+    expression   = '';
+    justCalc     = false;
+    resultEl.classList.remove('error');
+    expressionEl.textContent = '';
+    updateDisplay('0');
+  }
+
+  // ===== Backspace =====
+  function backspace() {
+    if (justCalc) { clearAll(); return; }
+    if (currentInput.length > 0) {
+      currentInput = currentInput.slice(0, -1);
+      updateDisplay(currentInput === '' ? '0' : currentInput);
+      expressionEl.textContent = expression + currentInput;
+    } else if (expression.length > 0) {
+      expression = expression.slice(0, -1);
+      expressionEl.textContent = expression;
+    }
+  }
+
+  // ===== Keyboard Support =====
+  document.addEventListener('keydown', function(e) {
+    const key = e.key;
+
+    if (key >= '0' && key <= '9')  { inputNum(key); return; }
+    if (key === '.')                { inputDecimal(); return; }
+    if (key === '+' || key === '-') { inputOperator(key); return; }
+    if (key === '*')                { inputOperator('*'); return; }
+    if (key === '/')                { e.preventDefault(); inputOperator('/'); return; }
+    if (key === '%')                { inputOperator('%'); return; }
+    if (key === 'Enter' || key === '=') { calculate(); return; }
+    if (key === 'Backspace')        { backspace(); return; }
+    if (key === 'Escape' || key === 'c' || key === 'C') { clearAll(); return; }
+  });
+</script>
+
+</body>
+</html>
